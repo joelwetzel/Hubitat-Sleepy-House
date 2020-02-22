@@ -10,3 +10,6 @@ So, when it's "nighttime":
 ### Example Use Cases:
 - My kitchen has several dimmers and also several on/off switches. And two motion sensors. At night, if there is no activity, it dims down and then turns everything off. If I come back in to the room, it brings the dimmers back up to the low level, but leaves the on/off switches off.
 - My hallway has dimmers, and two motion sensors. At night, if the motion sensors detect no activity for a while, it dims the lights down and then eventually turns them off. However, my wife doesn't like the hallway to come back on automatically, so I have auto-on disabled. But, since it already dimmed the lights before turning them off, that means that if I get up in the middle of the night and manually hit the switch, I know it will come on at a low level and not blind me.
+
+### Installation:
+There are two custom apps to install.  Both Sleepy-House.groovy and Sleepy-Room.groovy must be installed.
