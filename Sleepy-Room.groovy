@@ -73,7 +73,18 @@ def mainPage() {
         }
         section ("Miscellaneous:", hidden: true, hideable: true) {
             input(name:	"enableLogging", type: "bool", title: "Enable Debug Logging?", defaultValue: false,	required: true)
+            // input(name: "btnRunTests", type: "button", title: "Run Tests", submitOnChange: true)
         }
+    }
+}
+
+
+def appButtonHandler(btn) {
+    switch (btn) {
+        case "btnRunTests":
+            log.debug "Running Tests..."
+            runTests()
+            break
     }
 }
 
@@ -249,23 +260,53 @@ def wakeRoom() {
 }
 
 
-def isCurrentlyNight() {
-    use (groovy.time.TimeCategory) {
-        def fTime = timeToday(settings.fromTime)
-        def now = new Date()
-        def tTime = timeToday(settings.toTime)
-            
-        //log.debug "from: ${fTime}"
-        //log.debug "now: ${now}"
-        //log.debug "to: ${tTime}"
+def runTests() {
+    logTest(isNight("2020-02-24T22:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 17:00:00 CST 2020")), false, "Nightspan - Before")
+    logTest(isNight("2020-02-24T22:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 23:00:00 CST 2020")), true, "Nightspan - During Night")
+    logTest(isNight("2020-02-24T22:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 01:00:00 CST 2020")), true, "Nightspan - During Morning")
+    logTest(isNight("2020-02-24T22:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 07:00:00 CST 2020")), false, "Nightspan - After")
     
-        def isNight = now > fTime
-        def isMorning = now < tTime
+    logTest(isNight("2020-02-24T02:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 01:00:00 CST 2020")), false, "Morning Only - Before")
+    logTest(isNight("2020-02-24T02:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 03:00:00 CST 2020")), true, "Morning Only - During Morning")
+    logTest(isNight("2020-02-24T02:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 07:00:00 CST 2020")), false, "Morning Only - After")
+}
 
-        //log.debug "isNight: ${isNight}"
-        //log.debug "isMorning: ${isMorning}"
-            
-        return isNight || isMorning
+
+def logTest(result, desiredResult, msg) {
+    if (result != desiredResult) {
+        log.error "TEST FAILED: ${msg}"
+    }
+    else {
+        log.info "Test passed: ${msg}"
+    }
+}
+
+
+def isCurrentlyNight() {
+    def now = new Date()
+    return isNight(settings.fromTime, settings.toTime, now)
+}
+
+def isNight(fromTimeSetting, toTimeSetting, now) {
+    use (groovy.time.TimeCategory) {
+        def fromTime = timeToday(fromTimeSetting)
+        def toTime = timeToday(toTimeSetting)
+        
+//        log.debug "from: ${fromTime}"
+//        log.debug "to: ${toTime}"
+//        log.debug "now: ${now}"
+
+        if (fromTime < toTime) {
+            // The timespan does NOT cross a midnight boundary.  (Usually meaning this is only active during early morning.)
+            return now > fromTime && now < toTime
+        }
+        else {
+            // The timespan crosses the midnight boundary
+            def isNight = now > fromTime
+            def isMorning = now < toTime
+
+            return isNight || isMorning
+        }
     }
 }
 
@@ -313,3 +354,5 @@ def log(msg) {
 		log.debug msg
 	}
 }
+
+
