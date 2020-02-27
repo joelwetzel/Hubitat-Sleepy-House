@@ -108,6 +108,8 @@ def updated() {
 
 
 def initialize() {
+    log.info "initialize()"
+    
 	unschedule()
 	unsubscribe()
 
@@ -126,7 +128,9 @@ def initialize() {
         subscribe(dimmers, "level", switchActivityHandler)
     }
     
-    state.lastActivityTime = new Date()
+    if (!state.lastActivityTime) {
+        state.lastActivityTime = new Date()
+    }
 	
     runEvery1Minute(tickTock)
 }
@@ -211,7 +215,7 @@ def tickTock() {
 
 // Try to make the room go to sleep, as long as there's no ongoing activity.
 def trySleepRoom() {
-    log.debug "trySleepRoom()"
+    log "trySleepRoom()"
     
     if (!isCurrentlyNight()) {
         return
@@ -238,7 +242,7 @@ def trySleepRoom() {
 
 // Wake the room up
 def wakeRoom() {
-    log.debug "wakeRoom()"
+    log "wakeRoom()"
     
     if (settings.wakeUpDimmers) {
         settings.dimmers.each { dimmer ->
@@ -319,6 +323,7 @@ def roomIsActive() {
             settings.motionSensors.each { motionSensor ->
                 if (motionSensor.currentValue("motion") == "active") {
                     aMotionSensorIsActive = true
+                    log "${motionSensor.displayName} is active."
                 }
             }
             if (aMotionSensorIsActive) {
@@ -330,7 +335,7 @@ def roomIsActive() {
         def now = new Date()
         def minutesSinceLastActivity = (now - toDateTime(state.lastActivityTime)).minutes
     
-        //log.debug "Minutes since last activity: ${minutesSinceLastActivity}"
+        log "Minutes since last activity: ${minutesSinceLastActivity}"
         
         if (minutesSinceLastActivity < activityWaitMinutes) {
             return true
