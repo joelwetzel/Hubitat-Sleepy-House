@@ -15,7 +15,7 @@
  */
 
 import groovy.time.*
-	
+
 definition(
     name: "Sleepy Room",
 	parent: "joelwetzel:Sleepy House",
@@ -34,13 +34,13 @@ preferences {
 
 
 def mainPage() {
-	dynamicPage (name: "mainPage", title: "", install: true, uninstall: true) {
+	dynamicPage (name: "mainPage", title: "Sleepy Room", install: true, uninstall: true) {
         if (!app.label) {
 			app.updateLabel("New Room")
 		}
 		section (getFormat("title", (app?.label ?: app?.name).toString())) {
-			input(name:	"roomName", type: "string", title: "Room Name", multiple: false, required: true, submitOnChange: false)
-            
+			input(name:	"roomName", type: "text", title: "Room Name", multiple: false, required: true, submitOnChange: false)
+
 			if (settings.roomName) {
 				app.updateLabel(settings.roomName)
 			}
@@ -58,17 +58,17 @@ def mainPage() {
             input (name:    "activityWaitMinutes", type: "number", title: "Minutes without activity before room starts to fall asleep:", required: true, defaultValue: 3)
             input (name:    "sleepMode", type: "enum", required: true, multiple: false, title: "When the room goes to sleep, dimmers should end up:", options: ["Completely off", "Just dimmed"], defaultValue: "Completely off")
         }
-        section ("Room waking up:", hidden: false, hideable: true) {        
+        section ("Room waking up:", hidden: false, hideable: true) {
             input (name:    "wakeUpForMotion", type: "bool", title: "Should motion activity wake the room from sleep?", required: true, defaultValue: true, submitOnChange: true)
             if (settings.wakeUpForMotion || settings.wakeUpForMotion == null) {
                 input (name:    "wakeUpDimmers", type: "bool", title: "Should the dimmers turn on when waking up the room? (They will come on at the Dimmed Level.)", required: true, defaultValue: true)
                 input (name:    "wakeUpSwitches", type: "bool", title: "Should the switches turn on when waking up the room? (They will come on full brightness, because they are just switches.)", required: true, defaultValue: false)
             }
         }
-        section ("Define 'Nighttime':", hidden: false, hideable: true) {          
+        section ("Define 'Nighttime':", hidden: false, hideable: true) {
             input (name:    "fromTime", type: "time", title: "Start of night", required: true)
             input (name:    "toTime", type: "time", title: "End of night", required: true)
-            
+
             paragraph "Is currently night: ${isCurrentlyNight()}"
         }
         section ("Miscellaneous:", hidden: true, hideable: true) {
@@ -102,14 +102,14 @@ def updated() {
     if (settings.roomName) {
 		app.updateLabel(settings.roomName)
     }
-    
+
 	initialize()
 }
 
 
 def initialize() {
     log.info "initialize()"
-    
+
 	unschedule()
 	unsubscribe()
 
@@ -117,28 +117,28 @@ def initialize() {
     // the event handlers.  However, I want my apps to be light impact.  So I only subscribe
     // to events if necessary.  However, I also put the same checks in the event handlers
     // for better readability of the code.
-    
+
     if (settings.wakeUpForMotion || settings.motionActivityKeepsAwake) {
 	    subscribe(motionSensors, "motion.active", motionActiveHandler)
     }
-    
+
     if (settings.switchActivityKeepsAwake) {
         subscribe(switches, "switch", switchActivityHandler)
         subscribe(dimmers, "switch", switchActivityHandler)
         subscribe(dimmers, "level", switchActivityHandler)
     }
-    
+
     if (!state.lastActivityTime) {
         state.lastActivityTime = new Date()
     }
-	
+
     runEvery1Minute(tickTock)
 }
 
 
 def switchActivityHandler(evt) {
     log "Activity detected on '${evt.displayName}', type: '${evt.type}'"
-    
+
     if (evt.type == "physical" && settings.switchActivityKeepsAwake) {
         state.lastActivityTime = new Date()
     }
@@ -151,7 +151,7 @@ def motionActiveHandler(evt) {
     if (settings.motionActivityKeepsAwake) {
         state.lastActivityTime = new Date()
     }
-    
+
     if (!isCurrentlyNight()) {
         return
     }
@@ -164,7 +164,7 @@ def motionActiveHandler(evt) {
 
 def tickTock() {
     //log.debug "tickTock"
-    
+
     if (!isCurrentlyNight()) {
         return
     }
@@ -175,9 +175,9 @@ def tickTock() {
         log "The room has activity. Allowing the room to stay awake."
         return
     }
-    
+
     def needToTurnOffIn30Seconds = false
-    
+
     settings.dimmers.each { dimmer ->
         //log "Evaluating dimmer: ${dimmer.displayName}"
         if (dimmer.currentValue("switch") == "on") {
@@ -185,7 +185,7 @@ def tickTock() {
                 log "${dimmer.displayName} is on and level is ${dimmer.currentValue("level")}, which is above Dimmed Level (${settings.dimmedLevel}). Dimming..."
                 dimmer.setLevel(settings.dimmedLevel, 10)
             }
-            
+
             // Turn them off in 30 seconds if the motion sensors are still off.
             needToTurnOffIn30Seconds = true
         }
@@ -197,7 +197,7 @@ def tickTock() {
             }
         }
     }
-    
+
     settings.switches.each { s ->
         //log "Evaluating switch: ${s.displayName}"
         if (s.currentValue("switch") == "on") {
@@ -206,7 +206,7 @@ def tickTock() {
             needToTurnOffIn30Seconds = true
         }
     }
-    
+
     if (needToTurnOffIn30Seconds) {
         runIn(30, trySleepRoom)
     }
@@ -216,24 +216,24 @@ def tickTock() {
 // Try to make the room go to sleep, as long as there's no ongoing activity.
 def trySleepRoom() {
     log "trySleepRoom()"
-    
+
     if (!isCurrentlyNight()) {
         return
     }
-    
+
     if (roomIsActive()) {
         log "The room has activity. Allowing the room to stay awake."
         return
     }
 
     log "Turning the room off..."
-    
+
     if (settings.sleepMode == "Completely off") {
         settings.dimmers.each { dimmer ->
             dimmer.off()
         }
     }
-    
+
     settings.switches.each { s ->
         s.off()
     }
@@ -243,21 +243,21 @@ def trySleepRoom() {
 // Wake the room up
 def wakeRoom() {
     log "wakeRoom()"
-    
+
     if (settings.wakeUpDimmers) {
         settings.dimmers.each { dimmer ->
             if (dimmer.currentValue("switch") == "off") {
                 log "Turning on dimmer '${dimmer.displayName}' to dimmed level."
-                dimmer.setLevel(settings.dimmedLevel, 1)            
+                dimmer.setLevel(settings.dimmedLevel, 1)
             }
         }
     }
-    
+
     if (settings.wakeUpSwitches) {
         settings.switches.each { s ->
             if (s.currentValue("switch") == "off") {
                 log "Turning on switch '${s.displayName}'."
-                s.on()         
+                s.on()
             }
         }
     }
@@ -269,7 +269,7 @@ def runTests() {
     logTest(isNight("2020-02-24T22:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 23:00:00 CST 2020")), true, "Nightspan - During Night")
     logTest(isNight("2020-02-24T22:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 01:00:00 CST 2020")), true, "Nightspan - During Morning")
     logTest(isNight("2020-02-24T22:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 07:00:00 CST 2020")), false, "Nightspan - After")
-    
+
     logTest(isNight("2020-02-24T02:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 01:00:00 CST 2020")), false, "Morning Only - Before")
     logTest(isNight("2020-02-24T02:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 03:00:00 CST 2020")), true, "Morning Only - During Morning")
     logTest(isNight("2020-02-24T02:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 07:00:00 CST 2020")), false, "Morning Only - After")
@@ -295,7 +295,7 @@ def isNight(fromTimeSetting, toTimeSetting, now) {
     use (groovy.time.TimeCategory) {
         def fromTime = timeToday(fromTimeSetting)
         def toTime = timeToday(toTimeSetting)
-        
+
 //        log.debug "from: ${fromTime}"
 //        log.debug "to: ${toTime}"
 //        log.debug "now: ${now}"
@@ -330,13 +330,13 @@ def roomIsActive() {
                 return true
             }
         }
-    
+
         // Return true if there has been dimmer/switch/motion activity in the last {activityTime}
         def now = new Date()
         def minutesSinceLastActivity = (now - toDateTime(state.lastActivityTime)).minutes
-    
+
         log "Minutes since last activity: ${minutesSinceLastActivity}"
-        
+
         if (minutesSinceLastActivity < activityWaitMinutes) {
             return true
         }
@@ -359,5 +359,3 @@ def log(msg) {
 		log.debug msg
 	}
 }
-
-
