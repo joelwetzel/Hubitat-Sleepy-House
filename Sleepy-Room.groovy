@@ -73,18 +73,7 @@ def mainPage() {
         }
         section ("Miscellaneous:", hidden: true, hideable: true) {
             input(name:	"enableLogging", type: "bool", title: "Enable Debug Logging?", defaultValue: false,	required: true)
-            // input(name: "btnRunTests", type: "button", title: "Run Tests", submitOnChange: true)
         }
-    }
-}
-
-
-def appButtonHandler(btn) {
-    switch (btn) {
-        case "btnRunTests":
-            log.debug "Running Tests..."
-            runTests()
-            break
     }
 }
 
@@ -123,13 +112,17 @@ def initialize() {
     }
 
     if (settings.switchActivityKeepsAwake) {
-        subscribe(switches, "switch", switchActivityHandler)
-        subscribe(dimmers, "switch", switchActivityHandler)
+        subscribe(switches, "switch.on", switchActivityHandler)
+        subscribe(switches, "switch.off", switchActivityHandler)
+        subscribe(dimmers, "switch.on", switchActivityHandler)
+        subscribe(dimmers, "switch.off", switchActivityHandler)
         subscribe(dimmers, "level", switchActivityHandler)
     }
 
     if (!state.lastActivityTime) {
-        state.lastActivityTime = new Date()
+        use (groovy.time.TimeCategory) {
+            state.lastActivityTime = formatDate(dateNow()-24.hours)
+        }
     }
 
     runEvery1Minute(tickTock)
@@ -140,7 +133,7 @@ def switchActivityHandler(evt) {
     log "Activity detected on '${evt.displayName}', type: '${evt.type}'"
 
     if (evt.type == "physical" && settings.switchActivityKeepsAwake) {
-        state.lastActivityTime = new Date()
+        state.lastActivityTime = formatDate(new Date())
     }
 }
 
@@ -149,7 +142,7 @@ def motionActiveHandler(evt) {
     log "Motion detected by '${evt.displayName}'"
 
     if (settings.motionActivityKeepsAwake) {
-        state.lastActivityTime = new Date()
+        state.lastActivityTime = formatDate(new Date())
     }
 
     if (!isCurrentlyNight()) {
@@ -162,7 +155,7 @@ def motionActiveHandler(evt) {
 }
 
 
-def tickTock() {
+def tickTock(e) {
     //log.debug "tickTock"
 
     if (!isCurrentlyNight()) {
@@ -264,28 +257,6 @@ def wakeRoom() {
 }
 
 
-def runTests() {
-    logTest(isNight("2020-02-24T22:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 17:00:00 CST 2020")), false, "Nightspan - Before")
-    logTest(isNight("2020-02-24T22:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 23:00:00 CST 2020")), true, "Nightspan - During Night")
-    logTest(isNight("2020-02-24T22:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 01:00:00 CST 2020")), true, "Nightspan - During Morning")
-    logTest(isNight("2020-02-24T22:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 07:00:00 CST 2020")), false, "Nightspan - After")
-
-    logTest(isNight("2020-02-24T02:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 01:00:00 CST 2020")), false, "Morning Only - Before")
-    logTest(isNight("2020-02-24T02:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 03:00:00 CST 2020")), true, "Morning Only - During Morning")
-    logTest(isNight("2020-02-24T02:00:00.000-0600", "2020-02-24T05:30:00.000-0600", new Date("Mon Feb 24 07:00:00 CST 2020")), false, "Morning Only - After")
-}
-
-
-def logTest(result, desiredResult, msg) {
-    if (result != desiredResult) {
-        log.error "TEST FAILED: ${msg}"
-    }
-    else {
-        log.info "Test passed: ${msg}"
-    }
-}
-
-
 def isCurrentlyNight() {
     def now = new Date()
     return isNight(settings.fromTime, settings.toTime, now)
@@ -295,10 +266,6 @@ def isNight(fromTimeSetting, toTimeSetting, now) {
     use (groovy.time.TimeCategory) {
         def fromTime = timeToday(fromTimeSetting)
         def toTime = timeToday(toTimeSetting)
-
-//        log.debug "from: ${fromTime}"
-//        log.debug "to: ${toTime}"
-//        log.debug "now: ${now}"
 
         if (fromTime < toTime) {
             // The timespan does NOT cross a midnight boundary.  (Usually meaning this is only active during early morning.)
@@ -333,7 +300,7 @@ def roomIsActive() {
 
         // Return true if there has been dimmer/switch/motion activity in the last {activityTime}
         def now = new Date()
-        def minutesSinceLastActivity = (now - toDateTime(state.lastActivityTime)).minutes
+        def minutesSinceLastActivity = calculateMinutesSinceLastActivity()
 
         log "Minutes since last activity: ${minutesSinceLastActivity}"
 
@@ -358,4 +325,23 @@ def log(msg) {
 	if (enableLogging) {
 		log.debug msg
 	}
+}
+
+def calculateMinutesSinceLastActivity() {
+    use (groovy.time.TimeCategory) {
+        def now = new Date()
+        def minutesSinceLastActivity = (now - toDateTime(state.lastActivityTime)).minutes
+        def hoursSinceLastActivity = (now - toDateTime(state.lastActivityTime)).hours
+        def daysSinceLastActivity = (now - toDateTime(state.lastActivityTime)).days
+
+        return minutesSinceLastActivity + hoursSinceLastActivity*60 + daysSinceLastActivity*60*24
+    }
+}
+
+def dateNow() {
+    return new Date()
+}
+
+def formatDate(date) {
+    return date.format("yyyy-MM-dd'T'HH:mm:ssZ")
 }

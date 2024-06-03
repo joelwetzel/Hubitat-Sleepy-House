@@ -7,11 +7,12 @@ import me.biocomp.hubitat_ci.util.integration.IntegrationAppSpecification
 import me.biocomp.hubitat_ci.util.integration.TimeKeeper
 
 import spock.lang.Specification
+import spock.lang.Unroll
 
 /**
-* Basic tests for lockdown.groovy
+* Tests of private methods for lockdown.groovy
 */
-class BasicTests extends IntegrationAppSpecification {
+class IsNightTests extends IntegrationAppSpecification {
     def switchFixture1 = SwitchFixtureFactory.create('s1')
     def switchFixture2 = SwitchFixtureFactory.create('s2')
     def switchFixture3 = SwitchFixtureFactory.create('s3')
@@ -50,34 +51,38 @@ class BasicTests extends IntegrationAppSpecification {
                                     ])
     }
 
-    void "installed() logs the settings"() {
-        when:
-        appScript.installed()
+    @Unroll
+    def "isNight calculates correctly with an overnight span"(String testTime, boolean expectedResult) {
+        given:
+        def fromTime = "2020-02-24T22:00:00.000-0600"
+        def toTime = "2020-02-24T05:30:00.000-0600"
+        def testTimeToday = appScript.timeToday(testTime)
 
-        then:
-        1 * log.info('Installed with settings: [roomName:Test Room, switches:[GeneratedDevice(input: s1, type: t), GeneratedDevice(input: s2, type: t), GeneratedDevice(input: s3, type: t)], dimmers:[GeneratedDevice(input: d1, type: t), GeneratedDevice(input: d2, type: t), GeneratedDevice(input: d3, type: t)], motionSensors:[GeneratedDevice(input: m1, type: t), GeneratedDevice(input: m2, type: t), GeneratedDevice(input: m3, type: t)], dimmedLevel:5, motionActivityKeepsAwake:true, switchActivityKeepsAwake:true, activityWaitMinutes:5, sleepMode:Completely off, wakeUpForMotion:true, wakeUpDimmers:true, wakeUpSwitches:true, fromTime:22:00, toTime:06:00, enableLogging:true]')
+        expect:
+        appScript.isNight(fromTime, toTime, testTimeToday) == expectedResult
+
+        where:
+        testTime | expectedResult
+        "2020-02-24T17:00:00.000-0600" | false          // Before fromTime
+        "2020-02-24T23:00:00.000-0600" | true           // After fromTime, but before midnight
+        "2020-02-25T03:00:00.000-0600" | true           // After midnight, but before toTime
+        "2020-02-25T06:00:00.000-0600" | false          // After toTime
     }
 
-    void "initialize() subscribes to events"() {
-        when:
-        appScript.initialize()
+    @Unroll
+    def "isNight calculates correctly with a morning-only span"(String testTime, boolean expectedResult) {
+        given:
+        def fromTime = "2020-02-24T02:00:00.000-0600"
+        def toTime = "2020-02-24T05:30:00.000-0600"
+        def testTimeToday = appScript.timeToday(testTime)
 
-        then:
-        1 * appExecutor.subscribe(motionSensors, 'motion.active', 'motionActiveHandler')
-        1 * appExecutor.subscribe(switchFixtures, 'switch.on', 'switchActivityHandler')
-        1 * appExecutor.subscribe(switchFixtures, 'switch.off', 'switchActivityHandler')
-        1 * appExecutor.subscribe(dimmerFixtures, 'switch.on', 'switchActivityHandler')
-        1 * appExecutor.subscribe(dimmerFixtures, 'switch.off', 'switchActivityHandler')
-        1 * appExecutor.subscribe(dimmerFixtures, 'level', 'switchActivityHandler')
+        expect:
+        appScript.isNight(fromTime, toTime, testTimeToday) == expectedResult
 
-        1 * appExecutor.runEvery1Minute('tickTock')
-    }
-
-    void "initialize() sets state"() {
-        when:
-        appScript.initialize()
-
-        then:
-        appState.lastActivityTime instanceof String
+        where:
+        testTime | expectedResult
+        "2020-02-24T01:00:00.000-0600" | false          // Before fromTime
+        "2020-02-24T03:00:00.000-0600" | true           // During
+        "2020-02-25T06:00:00.000-0600" | false          // After toTime
     }
 }

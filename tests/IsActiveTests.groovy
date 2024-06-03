@@ -7,11 +7,12 @@ import me.biocomp.hubitat_ci.util.integration.IntegrationAppSpecification
 import me.biocomp.hubitat_ci.util.integration.TimeKeeper
 
 import spock.lang.Specification
+import spock.lang.Unroll
 
 /**
-* Basic tests for lockdown.groovy
+* Tests of private methods for lockdown.groovy
 */
-class BasicTests extends IntegrationAppSpecification {
+class IsActiveTests extends IntegrationAppSpecification {
     def switchFixture1 = SwitchFixtureFactory.create('s1')
     def switchFixture2 = SwitchFixtureFactory.create('s2')
     def switchFixture3 = SwitchFixtureFactory.create('s3')
@@ -48,36 +49,75 @@ class BasicTests extends IntegrationAppSpecification {
                                         toTime: "06:00",
                                         enableLogging: true
                                     ])
-    }
 
-    void "installed() logs the settings"() {
-        when:
+        // Initialize each switch
+        switchFixtures.each { it.initialize(appExecutor, [switch: "off"]) }
+
+        // Initialize each dimmer
+        dimmerFixtures.each { it.initialize(appExecutor, [switch: "off", level: 0]) }
+
+        // Initialize each motion sensor
+        motionSensors.each { it.initialize(appExecutor, [motion: "inactive"]) }
+
         appScript.installed()
-
-        then:
-        1 * log.info('Installed with settings: [roomName:Test Room, switches:[GeneratedDevice(input: s1, type: t), GeneratedDevice(input: s2, type: t), GeneratedDevice(input: s3, type: t)], dimmers:[GeneratedDevice(input: d1, type: t), GeneratedDevice(input: d2, type: t), GeneratedDevice(input: d3, type: t)], motionSensors:[GeneratedDevice(input: m1, type: t), GeneratedDevice(input: m2, type: t), GeneratedDevice(input: m3, type: t)], dimmedLevel:5, motionActivityKeepsAwake:true, switchActivityKeepsAwake:true, activityWaitMinutes:5, sleepMode:Completely off, wakeUpForMotion:true, wakeUpDimmers:true, wakeUpSwitches:true, fromTime:22:00, toTime:06:00, enableLogging:true]')
     }
 
-    void "initialize() subscribes to events"() {
-        when:
-        appScript.initialize()
 
-        then:
-        1 * appExecutor.subscribe(motionSensors, 'motion.active', 'motionActiveHandler')
-        1 * appExecutor.subscribe(switchFixtures, 'switch.on', 'switchActivityHandler')
-        1 * appExecutor.subscribe(switchFixtures, 'switch.off', 'switchActivityHandler')
-        1 * appExecutor.subscribe(dimmerFixtures, 'switch.on', 'switchActivityHandler')
-        1 * appExecutor.subscribe(dimmerFixtures, 'switch.off', 'switchActivityHandler')
-        1 * appExecutor.subscribe(dimmerFixtures, 'level', 'switchActivityHandler')
-
-        1 * appExecutor.runEvery1Minute('tickTock')
+    def "with default sensor values, the room should evaluate as not active"() {
+        expect:
+        appScript.roomIsActive() == false
     }
 
-    void "initialize() sets state"() {
+    def "advancing in time, the room should stay inactive"() {
         when:
-        appScript.initialize()
+        TimeKeeper.advanceMinutes(1)
 
         then:
-        appState.lastActivityTime instanceof String
+        appScript.roomIsActive() == false
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == false
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == false
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == false
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == false
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == false
+    }
+
+    def "turning on a switch, the room should be active"() {
+        when:
+        switchFixture2.on()
+
+        then:
+        1 * log.debug('Activity detected on \'s2\', type: \'physical\'')
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == true
     }
 }
