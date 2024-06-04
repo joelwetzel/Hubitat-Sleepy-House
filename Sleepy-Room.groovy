@@ -155,9 +155,7 @@ def motionActiveHandler(evt) {
 }
 
 
-def tickTock(e) {
-    //log.debug "tickTock"
-
+def tickTock(evt) {
     if (!isCurrentlyNight()) {
         return
     }

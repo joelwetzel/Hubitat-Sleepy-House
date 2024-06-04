@@ -120,4 +120,76 @@ class IsActiveTests extends IntegrationAppSpecification {
         then:
         appScript.roomIsActive() == true
     }
+
+    def "adjusting a dimmer, the room should be active"() {
+        when:
+        dimmerFixture2.setLevel(50)
+
+        then:
+        2 * log.debug('Activity detected on \'d2\', type: \'physical\'')    // One for on, one for level
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == true
+    }
+
+    def "motion detected, the room should be active"() {
+        when:
+        motionSensorFixture2.activate()
+
+        then:
+        1 * log.debug('Motion detected by \'m2\'')
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == true
+    }
+
+    def "when motion ends, the room stays active for 5 minutes only"() {
+        when:
+        motionSensorFixture2.activate()
+
+        then:
+        1 * log.debug('Motion detected by \'m2\'')
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        and:
+        motionSensorFixture2.inactivate()
+
+        then:
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == false
+    }
 }
