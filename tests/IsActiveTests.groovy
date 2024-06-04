@@ -121,6 +121,34 @@ class IsActiveTests extends IntegrationAppSpecification {
         appScript.roomIsActive() == true
     }
 
+    def "when switch is turned back off, room goes inactive after 5 minutes"() {
+        when:
+        switchFixture2.on()
+
+        then:
+        1 * log.debug('Activity detected on \'s2\', type: \'physical\'')
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        appScript.roomIsActive() == true
+
+        when:
+        switchFixture2.off()
+
+        then:
+        1 * log.debug('Activity detected on \'s2\', type: \'physical\'')
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(5)
+
+        then:
+        appScript.roomIsActive() == false
+    }
+
     def "adjusting a dimmer, the room should be active"() {
         when:
         dimmerFixture2.setLevel(50)

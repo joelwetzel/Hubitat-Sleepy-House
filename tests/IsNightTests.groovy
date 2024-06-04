@@ -85,4 +85,22 @@ class IsNightTests extends IntegrationAppSpecification {
         "2020-02-24T03:00:00.000-0600" | true           // During
         "2020-02-25T06:00:00.000-0600" | false          // After toTime
     }
+
+    def "test of isCurrentlyNight, can set TimeKeeper to a time today during the nighttime span"() {
+        given:
+        def testTime = appScript.timeToday("2020-02-24T04:00:00.000-0600")
+        TimeKeeper.set(testTime)
+
+        expect:
+        appScript.isCurrentlyNight() == true
+    }
+
+    def "test of isCurrentlyNight, can set TimeKeeper to a time today outside the nighttime span"() {
+        given:
+        def testTime = appScript.timeToday("2020-02-24T08:00:00.000-0600")
+        TimeKeeper.set(testTime)
+
+        expect:
+        appScript.isCurrentlyNight() == false
+    }
 }

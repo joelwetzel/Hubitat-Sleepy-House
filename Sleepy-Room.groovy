@@ -156,6 +156,8 @@ def motionActiveHandler(evt) {
 
 
 def tickTock(evt) {
+    log.debug 'tickTock'
+
     if (!isCurrentlyNight()) {
         return
     }
@@ -199,13 +201,14 @@ def tickTock(evt) {
     }
 
     if (needToTurnOffIn30Seconds) {
+        log "Scheduling trySleepRoom for 30 seconds from now"
         runIn(30, trySleepRoom)
     }
 }
 
 
 // Try to make the room go to sleep, as long as there's no ongoing activity.
-def trySleepRoom() {
+def trySleepRoom(evt) {
     log "trySleepRoom()"
 
     if (!isCurrentlyNight()) {
