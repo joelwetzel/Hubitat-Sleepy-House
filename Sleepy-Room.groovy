@@ -109,14 +109,13 @@ def initialize() {
 
     if (settings.wakeUpForMotion || settings.motionActivityKeepsAwake) {
 	    subscribe(motionSensors, "motion.active", motionActiveHandler)
+        subscribe(motionSensors, "motion.inactive", motionInactiveHandler)
     }
 
     if (settings.switchActivityKeepsAwake) {
         subscribe(switches, "switch.on", switchActivityHandler)
-        subscribe(switches, "switch.off", switchActivityHandler)
         subscribe(dimmers, "switch.on", switchActivityHandler)
-        subscribe(dimmers, "switch.off", switchActivityHandler)
-        subscribe(dimmers, "level", switchActivityHandler)
+        subscribe(dimmers, "level", levelActivityHandler)
     }
 
     if (!state.lastActivityTime) {
@@ -130,9 +129,19 @@ def initialize() {
 
 
 def switchActivityHandler(evt) {
-    log "Activity detected on '${evt.displayName}', type: '${evt.type}'"
+    log "Switch activity detected on '${evt.displayName}', type: '${evt.type}'"
 
     if (evt.type == "physical" && settings.switchActivityKeepsAwake) {
+        state.lastActivityTime = formatDate(new Date())
+    }
+}
+
+
+def levelActivityHandler(evt) {
+    log "Level activity detected on '${evt.displayName}', type: '${evt.type}'"
+
+    if (evt.type == "physical" && settings.switchActivityKeepsAwake
+        && evt.value > dimmedLevel) {                                           // Dimming down to the dimmed level or below doesn't count as activity
         state.lastActivityTime = formatDate(new Date())
     }
 }
@@ -151,6 +160,15 @@ def motionActiveHandler(evt) {
 
     if (settings.wakeUpForMotion) {
         wakeRoom()
+    }
+}
+
+
+def motionInactiveHandler(evt) {
+    log "Motion ended on '${evt.displayName}'"
+
+    if (settings.motionActivityKeepsAwake) {
+        state.lastActivityTime = formatDate(new Date())
     }
 }
 
@@ -284,18 +302,16 @@ def isNight(fromTimeSetting, toTimeSetting, now) {
 
 
 def roomIsActive() {
+    def result = false
+
     use (groovy.time.TimeCategory) {
         if (settings.motionActivityKeepsAwake) {
             // Return true if any motion sensor is active
-            def aMotionSensorIsActive = false
             settings.motionSensors.each { motionSensor ->
                 if (motionSensor.currentValue("motion") == "active") {
-                    aMotionSensorIsActive = true
+                    result = true
                     log "${motionSensor.displayName} is active."
                 }
-            }
-            if (aMotionSensorIsActive) {
-                return true
             }
         }
 
@@ -304,14 +320,14 @@ def roomIsActive() {
         def minutesSinceLastActivity = calculateMinutesSinceLastActivity()
 
         log "Minutes since last activity: ${minutesSinceLastActivity}"
+        log "activityWaitMinutes: ${activityWaitMinutes}"
 
         if (minutesSinceLastActivity < activityWaitMinutes) {
-            return true
+            result = true
         }
-
-        // ELSE room is not active anymore
-        return false
     }
+
+    return result
 }
 
 
@@ -329,13 +345,23 @@ def log(msg) {
 }
 
 def calculateMinutesSinceLastActivity() {
-    use (groovy.time.TimeCategory) {
-        def now = new Date()
-        def minutesSinceLastActivity = (now - toDateTime(state.lastActivityTime)).minutes
-        def hoursSinceLastActivity = (now - toDateTime(state.lastActivityTime)).hours
-        def daysSinceLastActivity = (now - toDateTime(state.lastActivityTime)).days
+    def now = new Date()
+    def lastActivityTime = toDateTime(state.lastActivityTime)
 
-        return minutesSinceLastActivity + hoursSinceLastActivity*60 + daysSinceLastActivity*60*24
+    log.debug("lastActivityTime: ${lastActivityTime}, now: ${now}")
+
+    return calculateMinutesBetweenDates(lastActivityTime, now)
+}
+
+def calculateMinutesBetweenDates(Date date1, Date date2) {
+    if (date1 >= date2) {
+        return 0
+    }
+
+    use (groovy.time.TimeCategory) {
+        def diff = date2 - date1
+
+        return diff.seconds/60 + diff.minutes + diff.hours*60 + diff.days*60*24
     }
 }
 

@@ -64,11 +64,10 @@ class BasicTests extends IntegrationAppSpecification {
 
         then:
         1 * appExecutor.subscribe(motionSensors, 'motion.active', 'motionActiveHandler')
+        1 * appExecutor.subscribe(motionSensors, 'motion.inactive', 'motionInactiveHandler')
         1 * appExecutor.subscribe(switchFixtures, 'switch.on', 'switchActivityHandler')
-        1 * appExecutor.subscribe(switchFixtures, 'switch.off', 'switchActivityHandler')
         1 * appExecutor.subscribe(dimmerFixtures, 'switch.on', 'switchActivityHandler')
-        1 * appExecutor.subscribe(dimmerFixtures, 'switch.off', 'switchActivityHandler')
-        1 * appExecutor.subscribe(dimmerFixtures, 'level', 'switchActivityHandler')
+        1 * appExecutor.subscribe(dimmerFixtures, 'level', 'levelActivityHandler')
 
         1 * appExecutor.runEvery1Minute('tickTock')
     }

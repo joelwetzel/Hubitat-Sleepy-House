@@ -60,6 +60,9 @@ class IsActiveTests extends IntegrationAppSpecification {
         motionSensors.each { it.initialize(appExecutor, [motion: "inactive"]) }
 
         appScript.installed()
+
+        def testTime = appScript.timeToday("2020-02-24T02:00:00-0600")
+        TimeKeeper.set(testTime)
     }
 
 
@@ -111,7 +114,7 @@ class IsActiveTests extends IntegrationAppSpecification {
         switchFixture2.on()
 
         then:
-        1 * log.debug('Activity detected on \'s2\', type: \'physical\'')
+        1 * log.debug('Switch activity detected on \'s2\', type: \'physical\'')
         appScript.roomIsActive() == true
 
         when:
@@ -121,12 +124,12 @@ class IsActiveTests extends IntegrationAppSpecification {
         appScript.roomIsActive() == true
     }
 
-    def "when switch is turned back off, room goes inactive after 5 minutes"() {
+    def "when switch is turned back off, room goes inactive 5 minutes after it was turned on"() {
         when:
         switchFixture2.on()
 
         then:
-        1 * log.debug('Activity detected on \'s2\', type: \'physical\'')
+        1 * log.debug('Switch activity detected on \'s2\', type: \'physical\'')
         appScript.roomIsActive() == true
 
         when:
@@ -139,11 +142,10 @@ class IsActiveTests extends IntegrationAppSpecification {
         switchFixture2.off()
 
         then:
-        1 * log.debug('Activity detected on \'s2\', type: \'physical\'')
         appScript.roomIsActive() == true
 
         when:
-        TimeKeeper.advanceMinutes(5)
+        TimeKeeper.advanceMinutes(4)
 
         then:
         appScript.roomIsActive() == false
@@ -154,7 +156,8 @@ class IsActiveTests extends IntegrationAppSpecification {
         dimmerFixture2.setLevel(50)
 
         then:
-        2 * log.debug('Activity detected on \'d2\', type: \'physical\'')    // One for on, one for level
+        1 * log.debug('Level activity detected on \'d2\', type: \'physical\'')    // One for switch on, one for level
+        1 * log.debug('Switch activity detected on \'d2\', type: \'physical\'')
         appScript.roomIsActive() == true
 
         when:
@@ -162,6 +165,25 @@ class IsActiveTests extends IntegrationAppSpecification {
 
         then:
         appScript.roomIsActive() == true
+    }
+
+    def "adjusting a dimmer, the room should be inactive after 5 minutes"() {
+        when:
+        dimmerFixture2.setLevel(50)
+
+        then:
+        1 * log.debug('Level activity detected on \'d2\', type: \'physical\'')    // One for switch on, one for level
+        1 * log.debug('Switch activity detected on \'d2\', type: \'physical\'')
+        appScript.roomIsActive() == true
+
+        when:
+        for (def i = 0; i < 5; i++) {
+            TimeKeeper.advanceMinutes(1)
+        }
+        def isActive = appScript.roomIsActive()
+
+        then:
+        isActive == false
     }
 
     def "motion detected, the room should be active"() {
@@ -192,6 +214,12 @@ class IsActiveTests extends IntegrationAppSpecification {
 
         and:
         motionSensorFixture2.inactivate()
+
+        then:
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(1)
 
         then:
         appScript.roomIsActive() == true
