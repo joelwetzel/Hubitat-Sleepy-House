@@ -1,4 +1,4 @@
-package joelwetzel.sleepy_house.tests
+package joelwetzel.sleepy_house.tests.privateMethodTests
 
 import me.biocomp.hubitat_ci.util.device_fixtures.SwitchFixtureFactory
 import me.biocomp.hubitat_ci.util.device_fixtures.DimmerFixtureFactory
@@ -40,9 +40,12 @@ class IsActiveTests extends IntegrationAppSpecification {
                                         dimmedLevel: 5,
                                         motionActivityKeepsAwake: true,
                                         switchActivityKeepsAwake: true,
+                                        dimmerActivityKeepsAwake: true,
                                         activityWaitMinutes: 5,
                                         sleepMode: "Completely off",
                                         wakeUpForMotion: true,
+                                        wakeUpForSwitchActivity: true,
+                                        wakeUpForDimmerActivity: true,
                                         wakeUpDimmers: true,
                                         wakeUpSwitches: true,
                                         fromTime: "22:00",

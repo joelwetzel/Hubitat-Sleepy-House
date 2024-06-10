@@ -1,7 +1,7 @@
 /**
  *  Sleepy House
  *
- *  Copyright 2019 Joel Wetzel
+ *  Copyright 2024 Joel Wetzel
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -52,9 +52,9 @@ def initialize() {
 }
 
 
-def installCheck() {         
+def installCheck() {
 	state.appInstalled = app.getInstallationState()
-	
+
 	if (state.appInstalled != 'COMPLETE') {
 		section{paragraph "Please hit 'Done' to install '${app.label}' parent app "}
   	}
@@ -75,14 +75,14 @@ def display(){
 	section() {
 		paragraph getFormat("line")
 		paragraph "<div style='color:#1A77C9;text-align:center'>Sleepy House - @joelwetzel<br><a href='https://github.com/joelwetzel/' target='_blank'>Click here for more Hubitat apps/drivers on my GitHub!</a></div>"
-	}       
+	}
 }
 
 
 def mainPage() {
     dynamicPage(name: "mainPage") {
     	installCheck()
-		
+
 		if (state.appInstalled == 'COMPLETE') {
 			section(getFormat("title", "${app.label}")) {
 				paragraph "An app for Hubitat to put rooms to sleep. It does many of the same actions as motion lighting, but it has a different philosophy. It's centered on the idea that at night, rooms should 'relax' to a dimmed state and then off, and motion can wake them up."
@@ -95,7 +95,3 @@ def mainPage() {
 		}
 	}
 }
-
-
-
-

@@ -1,7 +1,7 @@
 /**
  *  Sleepy Room
  *
- *  Copyright 2019 Joel Wetzel
+ *  Copyright 2024 Joel Wetzel
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -52,22 +52,27 @@ def mainPage() {
         }
         section ("Room going to sleep:", hidden: false, hideable: true) {
             input (name:	"dimmedLevel", type: "number", title: "Dimmed Level", defaultValue: 1, required: true)
-            paragraph "<b>Note:</b> The 'Dimmed Level' is used for several purposes:<ul><li>When falling asleep, dimmers will fade to this dimmed level about 30 seconds before the room completely falls asleep.<li>This is the level that 'off' dimmers will be preset to, so that if you come into a dark room at night and push a physical switch, the light will not come on with the brightness of a thousand suns and blind you.<li>This is the level that the lights will come on to if you wake the room with motion.</li></li></li></ul>"
+            paragraph "<b>Note:</b> The 'Dimmed Level' is used for several purposes:<ul><li>When falling asleep, dimmers will fade to this dimmed level about 30 seconds before the room completely falls asleep.<li>This is the level that 'off' dimmers will be preset to, so that if you come into a dark room at night and push a physical switch, the light will not come on with the brightness of a thousand suns and blind you.<li>This is also the level that the lights will come on to if you wake the room with motion.</li></li></li></ul>"
+
             input (name:    "motionActivityKeepsAwake", type: "bool", title: "Should motion activity keep the room from falling asleep?", required: true, defaultValue: true)
-            input (name:    "switchActivityKeepsAwake", type: "bool", title: "Should switch/dimmer activity keep the room from falling asleep?", required: true, defaultValue: true)
+            input (name:    "switchActivityKeepsAwake", type: "bool", title: "Should switch on/off activity keep the room from falling asleep?", required: true, defaultValue: true)
+            input (name:    "dimmerActivityKeepsAwake", type: "bool", title: "Should dimmer brightness activity keep the room from falling asleep?", required: true, defaultValue: true)
+
             input (name:    "activityWaitMinutes", type: "number", title: "Minutes without activity before room starts to fall asleep:", required: true, defaultValue: 3)
             input (name:    "sleepMode", type: "enum", required: true, multiple: false, title: "When the room goes to sleep, dimmers should end up:", options: ["Completely off", "Just dimmed"], defaultValue: "Completely off")
         }
         section ("Room waking up:", hidden: false, hideable: true) {
             input (name:    "wakeUpForMotion", type: "bool", title: "Should motion activity wake the room from sleep?", required: true, defaultValue: true, submitOnChange: true)
-            if (settings.wakeUpForMotion || settings.wakeUpForMotion == null) {
+            input (name:    "wakeUpForSwitchActivity", type: "bool", title: "Should switch on/off activity wake the room from sleep?", required: true, defaultValue: true, submitOnChange: true)
+            input (name:    "wakeUpForDimmerActivity", type: "bool", title: "Should dimmer brightness activity wake the room from sleep?", required: true, defaultValue: true, submitOnChange: true)
+            if (settings.wakeUpForMotion || settings.wakeUpForSwitchActivity || settings.wakeUpForDimmerActivity) {
                 input (name:    "wakeUpDimmers", type: "bool", title: "Should the dimmers turn on when waking up the room? (They will come on at the Dimmed Level.)", required: true, defaultValue: true)
                 input (name:    "wakeUpSwitches", type: "bool", title: "Should the switches turn on when waking up the room? (They will come on full brightness, because they are just switches.)", required: true, defaultValue: false)
             }
         }
         section ("Define 'Nighttime':", hidden: false, hideable: true) {
-            input (name:    "fromTime", type: "time", title: "Start of night", required: true)
-            input (name:    "toTime", type: "time", title: "End of night", required: true)
+            input (name:    "fromTime", type: "time", title: "Start of night", required: true, submitOnChange: true)
+            input (name:    "toTime", type: "time", title: "End of night", required: true, submitOnChange: true)
 
             paragraph "Is currently night: ${isCurrentlyNight()}"
         }
@@ -102,19 +107,21 @@ def initialize() {
 	unschedule()
 	unsubscribe()
 
-    // NOTE: The logic would probably be clearer if I just put these settings checks into
-    // the event handlers.  However, I want my apps to be light impact.  So I only subscribe
-    // to events if necessary.  However, I also put the same checks in the event handlers
-    // for better readability of the code.
+    // NOTE: The event handlers also check these settings, but I double-check them
+    // here to keep the app lightweight, and not register for a handler that will
+    // ALWAYS exit early.
 
     if (settings.wakeUpForMotion || settings.motionActivityKeepsAwake) {
 	    subscribe(motionSensors, "motion.active", motionActiveHandler)
         subscribe(motionSensors, "motion.inactive", motionInactiveHandler)
     }
 
-    if (settings.switchActivityKeepsAwake) {
+    if (settings.wakeUpForSwitchActivity || settings.switchActivityKeepsAwake) {
         subscribe(switches, "switch.on", switchActivityHandler)
         subscribe(dimmers, "switch.on", switchActivityHandler)
+    }
+
+    if (settings.wakeUpForDimmerActivity || settings.dimmerActivityKeepsAwake) {
         subscribe(dimmers, "level", levelActivityHandler)
     }
 
@@ -129,20 +136,40 @@ def initialize() {
 
 
 def switchActivityHandler(evt) {
+    if (evt.type != "physical") {
+        return
+    }
+
     log "Switch activity detected on '${evt.displayName}', type: '${evt.type}'"
 
-    if (evt.type == "physical" && settings.switchActivityKeepsAwake) {
+    if (settings.switchActivityKeepsAwake) {
         state.lastActivityTime = formatDate(new Date())
+    }
+
+    if (settings.wakeUpForSwitchActivity && isCurrentlyNight()) {
+        if (!roomIsAwake(evt.device.getIdAsLong())) {
+            wakeRoom()
+        }
     }
 }
 
 
 def levelActivityHandler(evt) {
+    if (evt.type != "physical" ||
+        evt.value <= dimmedLevel) {     // Dimming down to the dimmed level or below doesn't count as activity
+        return
+    }
+
     log "Level activity detected on '${evt.displayName}', type: '${evt.type}'"
 
-    if (evt.type == "physical" && settings.switchActivityKeepsAwake
-        && evt.value > dimmedLevel) {                                           // Dimming down to the dimmed level or below doesn't count as activity
+    if (settings.dimmerActivityKeepsAwake) {
         state.lastActivityTime = formatDate(new Date())
+    }
+
+    if (settings.wakeUpForDimmerActivity && isCurrentlyNight()) {
+        if (!roomIsAwake(evt.device.getIdAsLong())) {
+            wakeRoom()
+        }
     }
 }
 
@@ -154,11 +181,7 @@ def motionActiveHandler(evt) {
         state.lastActivityTime = formatDate(new Date())
     }
 
-    if (!isCurrentlyNight()) {
-        return
-    }
-
-    if (settings.wakeUpForMotion) {
+    if (settings.wakeUpForMotion && isCurrentlyNight()) {
         wakeRoom()
     }
 }
@@ -180,7 +203,7 @@ def tickTock(evt) {
         return
     }
 
-    log "Sleepy Time Room '${settings.roomName}' evaluating..."
+    log "Sleepy Room '${settings.roomName}' evaluating..."
 
     if (roomIsActive()) {
         log "The room has activity. Allowing the room to stay awake."
@@ -190,14 +213,13 @@ def tickTock(evt) {
     def needToTurnOffIn30Seconds = false
 
     settings.dimmers.each { dimmer ->
-        //log "Evaluating dimmer: ${dimmer.displayName}"
         if (dimmer.currentValue("switch") == "on") {
             if (dimmer.currentValue("level") > settings.dimmedLevel) {
                 log "${dimmer.displayName} is on and level is ${dimmer.currentValue("level")}, which is above Dimmed Level (${settings.dimmedLevel}). Dimming..."
                 dimmer.setLevel(settings.dimmedLevel, 10)
             }
 
-            // Turn them off in 30 seconds if the motion sensors are still off.
+            // Turn them off in 30 seconds if no activity happens before then.
             needToTurnOffIn30Seconds = true
         }
         else {
@@ -210,10 +232,9 @@ def tickTock(evt) {
     }
 
     settings.switches.each { s ->
-        //log "Evaluating switch: ${s.displayName}"
         if (s.currentValue("switch") == "on") {
             log "${s.displayName} is on."
-            // Turn them off in 30 seconds if the motion sensors are still off.
+            // Turn them off in 30 seconds if no activity happens before then.
             needToTurnOffIn30Seconds = true
         }
     }
@@ -254,7 +275,13 @@ def trySleepRoom(evt) {
 
 // Wake the room up
 def wakeRoom() {
+    if (atomicState["wakeRoom"] == true) {
+        return
+    }
+
     log "wakeRoom()"
+
+    atomicState["wakeRoom"] = true
 
     if (settings.wakeUpDimmers) {
         settings.dimmers.each { dimmer ->
@@ -273,6 +300,8 @@ def wakeRoom() {
             }
         }
     }
+
+    atomicState["wakeRoom"] = false
 }
 
 
@@ -300,7 +329,31 @@ def isNight(fromTimeSetting, toTimeSetting, now) {
     }
 }
 
+/**
+ * A room is "awake" if any of its light switches or dimmers are turned on.
+ */
+def roomIsAwake(Long deviceIdToIgnore = null) {
+    def result = false
 
+    settings.switches.each { s ->
+        if (s.currentValue("switch") == "on" && s.getIdAsLong() != deviceIdToIgnore) {
+            result = true
+        }
+    }
+
+    settings.dimmers.each { d ->
+        if (d.currentValue("switch") == "on" && d.currentValue("level") >= dimmedLevel && d.getIdAsLong() != deviceIdToIgnore) {
+            result = true
+        }
+    }
+
+    return result
+}
+
+/**
+ * A room is "active" if it has active motion sensors, or if any motion, switch, or dimmer activity has occurred recently.
+ * Being "active" is a reason to keep a room "awake".
+ */
 def roomIsActive() {
     def result = false
 

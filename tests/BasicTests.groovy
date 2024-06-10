@@ -39,9 +39,12 @@ class BasicTests extends IntegrationAppSpecification {
                                         dimmedLevel: 5,
                                         motionActivityKeepsAwake: true,
                                         switchActivityKeepsAwake: true,
+                                        dimmerActivityKeepsAwake: true,
                                         activityWaitMinutes: 5,
                                         sleepMode: "Completely off",
                                         wakeUpForMotion: true,
+                                        wakeUpForSwitchActivity: true,
+                                        wakeUpForDimmerActivity: true,
                                         wakeUpDimmers: true,
                                         wakeUpSwitches: true,
                                         fromTime: "22:00",
@@ -55,7 +58,7 @@ class BasicTests extends IntegrationAppSpecification {
         appScript.installed()
 
         then:
-        1 * log.info('Installed with settings: [roomName:Test Room, switches:[GeneratedDevice(input: s1, type: t), GeneratedDevice(input: s2, type: t), GeneratedDevice(input: s3, type: t)], dimmers:[GeneratedDevice(input: d1, type: t), GeneratedDevice(input: d2, type: t), GeneratedDevice(input: d3, type: t)], motionSensors:[GeneratedDevice(input: m1, type: t), GeneratedDevice(input: m2, type: t), GeneratedDevice(input: m3, type: t)], dimmedLevel:5, motionActivityKeepsAwake:true, switchActivityKeepsAwake:true, activityWaitMinutes:5, sleepMode:Completely off, wakeUpForMotion:true, wakeUpDimmers:true, wakeUpSwitches:true, fromTime:22:00, toTime:06:00, enableLogging:true]')
+        1 * log.info('Installed with settings: [roomName:Test Room, switches:[GeneratedDevice(input: s1, type: t), GeneratedDevice(input: s2, type: t), GeneratedDevice(input: s3, type: t)], dimmers:[GeneratedDevice(input: d1, type: t), GeneratedDevice(input: d2, type: t), GeneratedDevice(input: d3, type: t)], motionSensors:[GeneratedDevice(input: m1, type: t), GeneratedDevice(input: m2, type: t), GeneratedDevice(input: m3, type: t)], dimmedLevel:5, motionActivityKeepsAwake:true, switchActivityKeepsAwake:true, dimmerActivityKeepsAwake:true, activityWaitMinutes:5, sleepMode:Completely off, wakeUpForMotion:true, wakeUpForSwitchActivity:true, wakeUpForDimmerActivity:true, wakeUpDimmers:true, wakeUpSwitches:true, fromTime:22:00, toTime:06:00, enableLogging:true]')
     }
 
     void "initialize() subscribes to events"() {
