@@ -212,6 +212,48 @@ class CanSleepTests extends IntegrationAppSpecification {
         dimmerFixtures.each { assert it.currentValue('switch') == 'off' }
     }
 
+    def "motion activity will not delay sleep if motionActivityKeepsAwake == false"() {
+        given:
+        def testTime = appScript.timeToday("2020-02-24T02:00:00-0600")
+        appScript.motionActivityKeepsAwake = false
+
+        when:
+        TimeKeeper.set(testTime)
+
+        and:
+        motionSensorFixture1.activate()
+
+        then:
+        // Check that all switches are on
+        switchFixtures.each { assert it.currentValue('switch') == 'on' }
+        // Check that all dimmers are at the dimmed level
+        dimmerFixtures.each { assert it.currentValue('level') == 5 }
+        dimmerFixtures.each { assert it.currentValue('switch') == 'on' }
+
+        when:
+        motionSensorFixture1.inactivate()
+        TimeKeeper.advanceMinutes(1)
+        TimeKeeper.advanceMinutes(1)
+        TimeKeeper.advanceMinutes(1)
+        TimeKeeper.advanceMinutes(1)
+        motionSensorFixture1.activate()         // But then there is more motion after 4 minutes
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+
+        when:
+        TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
+
+        then:
+        1 * log.debug("trySleepRoom()")
+        // Check that all switches are off
+        switchFixtures.each { assert it.currentValue('switch') == 'off' }
+        // Check that all dimmers are off
+        dimmerFixtures.each { assert it.currentValue('switch') == 'off' }
+    }
+
+
     def "switch activity will delay sleep"() {
         given:
         def testTime = appScript.timeToday("2020-02-24T02:00:00-0600")
@@ -262,6 +304,47 @@ class CanSleepTests extends IntegrationAppSpecification {
         dimmerFixtures.each { assert it.currentValue('switch') == 'off' }
     }
 
+    def "switch activity will not delay sleep if switchActivityKeepsAwake == false"() {
+        given:
+        def testTime = appScript.timeToday("2020-02-24T02:00:00-0600")
+        appScript.switchActivityKeepsAwake = false
+
+        when:
+        TimeKeeper.set(testTime)
+
+        and:
+        motionSensorFixture1.activate()
+
+        then:
+        // Check that all switches are on
+        switchFixtures.each { assert it.currentValue('switch') == 'on' }
+        // Check that all dimmers are at the dimmed level
+        dimmerFixtures.each { assert it.currentValue('level') == 5 }
+        dimmerFixtures.each { assert it.currentValue('switch') == 'on' }
+
+        when:
+        motionSensorFixture1.inactivate()
+        TimeKeeper.advanceMinutes(1)
+        TimeKeeper.advanceMinutes(1)
+        TimeKeeper.advanceMinutes(1)
+        TimeKeeper.advanceMinutes(1)
+        switchFixture1.on()         // But then there is switch activity after 4 minutes
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+
+        when:
+        TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
+
+        then:
+        1 * log.debug("trySleepRoom()")
+        // Check that all switches are off
+        switchFixtures.each { assert it.currentValue('switch') == 'off' }
+        // Check that all dimmers are off
+        dimmerFixtures.each { assert it.currentValue('switch') == 'off' }
+    }
+
     def "dimmer activity can delay sleep"() {
         given:
         def testTime = appScript.timeToday("2020-02-24T02:00:00-0600")
@@ -296,6 +379,47 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)            // After 4 more minutes, we starting shutting the lights off, starting with the dimmers
         TimeKeeper.advanceMinutes(1)
         TimeKeeper.advanceMinutes(1)
+        TimeKeeper.advanceMinutes(1)
+
+        then:
+        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+
+        when:
+        TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
+
+        then:
+        1 * log.debug("trySleepRoom()")
+        // Check that all switches are off
+        switchFixtures.each { assert it.currentValue('switch') == 'off' }
+        // Check that all dimmers are off
+        dimmerFixtures.each { assert it.currentValue('switch') == 'off' }
+    }
+
+    def "dimmer activity will not delay sleep if dimmerActivityKeepsAwake == false"() {
+        given:
+        def testTime = appScript.timeToday("2020-02-24T02:00:00-0600")
+        appScript.dimmerActivityKeepsAwake = false
+
+        when:
+        TimeKeeper.set(testTime)
+
+        and:
+        motionSensorFixture1.activate()
+
+        then:
+        // Check that all switches are on
+        switchFixtures.each { assert it.currentValue('switch') == 'on' }
+        // Check that all dimmers are at the dimmed level
+        dimmerFixtures.each { assert it.currentValue('level') == 5 }
+        dimmerFixtures.each { assert it.currentValue('switch') == 'on' }
+
+        when:
+        motionSensorFixture1.inactivate()
+        TimeKeeper.advanceMinutes(1)
+        TimeKeeper.advanceMinutes(1)
+        TimeKeeper.advanceMinutes(1)
+        TimeKeeper.advanceMinutes(1)
+        dimmerFixture1.setLevel(99)         // But then there is dimmer activity after 4 minutes
         TimeKeeper.advanceMinutes(1)
 
         then:

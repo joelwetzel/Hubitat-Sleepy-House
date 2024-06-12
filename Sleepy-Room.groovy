@@ -54,9 +54,9 @@ def mainPage() {
             input (name:	"dimmedLevel", type: "number", title: "Dimmed Level", defaultValue: 1, required: true)
             paragraph "<b>Note:</b> The 'Dimmed Level' is used for several purposes:<ul><li>When falling asleep, dimmers will fade to this dimmed level about 30 seconds before the room completely falls asleep.<li>This is the level that 'off' dimmers will be preset to, so that if you come into a dark room at night and push a physical switch, the light will not come on with the brightness of a thousand suns and blind you.<li>This is also the level that the lights will come on to if you wake the room with motion.</li></li></li></ul>"
 
-            input (name:    "motionActivityKeepsAwake", type: "bool", title: "Should motion activity keep the room from falling asleep?", required: true, defaultValue: true)
-            input (name:    "switchActivityKeepsAwake", type: "bool", title: "Should switch on/off activity keep the room from falling asleep?", required: true, defaultValue: true)
-            input (name:    "dimmerActivityKeepsAwake", type: "bool", title: "Should dimmer brightness activity keep the room from falling asleep?", required: true, defaultValue: true)
+            input (name:    "motionActivityKeepsAwake", type: "bool", title: "Should motion activity delay the room from falling asleep?", required: true, defaultValue: true)
+            input (name:    "switchActivityKeepsAwake", type: "bool", title: "Should switch on/off activity delay the room from falling asleep?", required: true, defaultValue: true)
+            input (name:    "dimmerActivityKeepsAwake", type: "bool", title: "Should dimmer brightness activity delay the room from falling asleep?", required: true, defaultValue: true)
 
             input (name:    "activityWaitMinutes", type: "number", title: "Minutes without activity before room starts to fall asleep:", required: true, defaultValue: 3)
             input (name:    "sleepMode", type: "enum", required: true, multiple: false, title: "When the room goes to sleep, dimmers should end up:", options: ["Completely off", "Just dimmed"], defaultValue: "Completely off")
@@ -67,6 +67,7 @@ def mainPage() {
             input (name:    "wakeUpForDimmerActivity", type: "bool", title: "Should dimmer brightness activity wake the room from sleep?", required: true, defaultValue: true, submitOnChange: true)
             if (settings.wakeUpForMotion || settings.wakeUpForSwitchActivity || settings.wakeUpForDimmerActivity) {
                 input (name:    "wakeUpDimmers", type: "bool", title: "Should the dimmers turn on when waking up the room? (They will come on at the Dimmed Level.)", required: true, defaultValue: true)
+                // TODO - make the wakeup level be an option?
                 input (name:    "wakeUpSwitches", type: "bool", title: "Should the switches turn on when waking up the room? (They will come on full brightness, because they are just switches.)", required: true, defaultValue: false)
             }
         }
