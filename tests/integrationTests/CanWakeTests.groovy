@@ -11,9 +11,6 @@ import me.biocomp.hubitat_ci.validation.Flags
 import spock.lang.Specification
 import spock.lang.Unroll
 
-/**
-* Tests of TODO
-*/
 class CanWakeTests extends IntegrationAppSpecification {
     def switchFixture1 = SwitchFixtureFactory.create('s1')
     def switchFixture2 = SwitchFixtureFactory.create('s2')
@@ -30,6 +27,8 @@ class CanWakeTests extends IntegrationAppSpecification {
     def motionSensorFixture2 = MotionSensorFixtureFactory.create('m2')
     def motionSensorFixture3 = MotionSensorFixtureFactory.create('m3')
     def motionSensors = [motionSensorFixture1, motionSensorFixture2, motionSensorFixture3]
+
+    def wakeUpMessage = "Waking room."
 
     @Override
     def setup() {
@@ -80,7 +79,7 @@ class CanWakeTests extends IntegrationAppSpecification {
         motionSensorFixture1.activate()
 
         then:
-        0 * log.debug("wakeRoom()")
+        0 * log.debug(wakeUpMessage)
         // Check that all switches are still off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that all dimmers are still off
@@ -96,7 +95,7 @@ class CanWakeTests extends IntegrationAppSpecification {
         switchFixture1.on()
 
         then:
-        0 * log.debug("wakeRoom()")
+        0 * log.debug(wakeUpMessage)
         // Check that the other 2 switches are still off
         switchFixture2.currentValue('switch') == 'off'
         switchFixture3.currentValue('switch') == 'off'
@@ -113,7 +112,7 @@ class CanWakeTests extends IntegrationAppSpecification {
         dimmerFixture1.setLevel(50)
 
         then:
-        0 * log.debug("wakeRoom()")
+        0 * log.debug(wakeUpMessage)
         // Check that all switches are still off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that the other 2 dimmers are still off
@@ -130,7 +129,7 @@ class CanWakeTests extends IntegrationAppSpecification {
         motionSensorFixture1.activate()
 
         then:
-        1 * log.debug("wakeRoom()")
+        1 * log.debug(wakeUpMessage)
         // Check that all switches are on
         switchFixtures.each { assert it.currentValue('switch') == 'on' }
         // Check that all dimmers are at the dimmed level
@@ -148,7 +147,7 @@ class CanWakeTests extends IntegrationAppSpecification {
         motionSensorFixture1.activate()
 
         then:
-        0 * log.debug("wakeRoom()")
+        0 * log.debug(wakeUpMessage)
         // Check that all switches are still off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that all dimmers are still off
@@ -164,7 +163,7 @@ class CanWakeTests extends IntegrationAppSpecification {
         switchFixture3.on()
 
         then:
-        1 * log.debug("wakeRoom()")
+        1 * log.debug(wakeUpMessage)
         // Check that all switches are on
         switchFixtures.each { assert it.currentValue('switch') == 'on' }
         // Check that all dimmers are at the dimmed level
@@ -182,7 +181,7 @@ class CanWakeTests extends IntegrationAppSpecification {
         switchFixture3.on()
 
         then:
-        0 * log.debug("wakeRoom()")
+        0 * log.debug(wakeUpMessage)
         // Check that the other 2 switches are still off
         switchFixture1.currentValue('switch') == 'off'
         switchFixture2.currentValue('switch') == 'off'
@@ -199,7 +198,7 @@ class CanWakeTests extends IntegrationAppSpecification {
         dimmerFixture2.setLevel(50)
 
         then:
-        1 * log.debug("wakeRoom()")
+        1 * log.debug(wakeUpMessage)
         // Check that all switches are on
         switchFixtures.each { assert it.currentValue('switch') == 'on' }
         // Check that all dimmers are at the dimmed level, except the one I set to 50
@@ -220,7 +219,7 @@ class CanWakeTests extends IntegrationAppSpecification {
         dimmerFixture2.setLevel(50)
 
         then:
-        0 * log.debug("wakeRoom()")
+        0 * log.debug(wakeUpMessage)
         // Check that the other 2 switches are still off
         switchFixture1.currentValue('switch') == 'off'
         switchFixture2.currentValue('switch') == 'off'

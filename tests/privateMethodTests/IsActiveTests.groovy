@@ -9,9 +9,6 @@ import me.biocomp.hubitat_ci.util.integration.TimeKeeper
 import spock.lang.Specification
 import spock.lang.Unroll
 
-/**
-* Tests of private methods for lockdown.groovy
-*/
 class IsActiveTests extends IntegrationAppSpecification {
     def switchFixture1 = SwitchFixtureFactory.create('s1')
     def switchFixture2 = SwitchFixtureFactory.create('s2')
@@ -117,7 +114,7 @@ class IsActiveTests extends IntegrationAppSpecification {
         switchFixture2.on()
 
         then:
-        1 * log.debug('Switch activity detected on \'s2\', type: \'physical\'')
+        1 * log.debug('Switch activity detected on \'s2\'')
         appScript.roomIsActive() == true
 
         when:
@@ -132,7 +129,7 @@ class IsActiveTests extends IntegrationAppSpecification {
         switchFixture2.on()
 
         then:
-        1 * log.debug('Switch activity detected on \'s2\', type: \'physical\'')
+        1 * log.debug('Switch activity detected on \'s2\'')
         appScript.roomIsActive() == true
 
         when:
@@ -159,8 +156,8 @@ class IsActiveTests extends IntegrationAppSpecification {
         dimmerFixture2.setLevel(50)
 
         then:
-        1 * log.debug('Level activity detected on \'d2\', type: \'physical\'')    // One for switch on, one for level
-        1 * log.debug('Switch activity detected on \'d2\', type: \'physical\'')
+        1 * log.debug('Level activity detected on \'d2\'')    // One for switch on, one for level
+        1 * log.debug('Switch activity detected on \'d2\'')
         appScript.roomIsActive() == true
 
         when:
@@ -175,8 +172,8 @@ class IsActiveTests extends IntegrationAppSpecification {
         dimmerFixture2.setLevel(50)
 
         then:
-        1 * log.debug('Level activity detected on \'d2\', type: \'physical\'')    // One for switch on, one for level
-        1 * log.debug('Switch activity detected on \'d2\', type: \'physical\'')
+        1 * log.debug('Level activity detected on \'d2\'')    // One for switch on, one for level
+        1 * log.debug('Switch activity detected on \'d2\'')
         appScript.roomIsActive() == true
 
         when:
@@ -194,7 +191,7 @@ class IsActiveTests extends IntegrationAppSpecification {
         motionSensorFixture2.activate()
 
         then:
-        1 * log.debug('Motion detected by \'m2\'')
+        1 * log.debug('Motion detected on \'m2\'')
         appScript.roomIsActive() == true
 
         when:
@@ -209,7 +206,7 @@ class IsActiveTests extends IntegrationAppSpecification {
         motionSensorFixture2.activate()
 
         then:
-        1 * log.debug('Motion detected by \'m2\'')
+        1 * log.debug('Motion detected on \'m2\'')
         appScript.roomIsActive() == true
 
         when:

@@ -11,9 +11,6 @@ import me.biocomp.hubitat_ci.validation.Flags
 import spock.lang.Specification
 import spock.lang.Unroll
 
-/**
-* Tests of TODO
-*/
 class CanSleepTests extends IntegrationAppSpecification {
     def switchFixture1 = SwitchFixtureFactory.create('s1')
     def switchFixture2 = SwitchFixtureFactory.create('s2')
@@ -30,6 +27,9 @@ class CanSleepTests extends IntegrationAppSpecification {
     def motionSensorFixture2 = MotionSensorFixtureFactory.create('m2')
     def motionSensorFixture3 = MotionSensorFixtureFactory.create('m3')
     def motionSensors = [motionSensorFixture1, motionSensorFixture2, motionSensorFixture3]
+
+    def gettingSleepyMessage = "Room is falling asleep.  Scheduling full sleep for 30 seconds from now."
+    def goToSleepMessage = "Putting the room to sleep."
 
     @Override
     def setup() {
@@ -97,13 +97,13 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+        1 * log.debug(gettingSleepyMessage)
 
         when:
         TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
 
         then:
-        1 * log.debug("trySleepRoom()")
+        1 * log.debug(goToSleepMessage)
         // Check that all switches are off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that all dimmers are off
@@ -137,7 +137,7 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        0 * log.debug("Scheduling trySleepRoom for 30 seconds from now")        // Should not go to sleep after 5 minutes
+        0 * log.debug(gettingSleepyMessage)        // Should not go to sleep after 5 minutes
 
         when:
         TimeKeeper.advanceMinutes(1)            // But after another 5 minutes, we starting shutting the lights off, starting with the dimmers
@@ -147,13 +147,13 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+        1 * log.debug(gettingSleepyMessage)
 
         when:
         TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
 
         then:
-        1 * log.debug("trySleepRoom()")
+        1 * log.debug(goToSleepMessage)
         // Check that all switches are off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that all dimmers are off
@@ -187,7 +187,7 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        0 * log.debug("Scheduling trySleepRoom for 30 seconds from now")    // Shouldn't try to sleep
+        0 * log.debug(gettingSleepyMessage)    // Shouldn't try to sleep
         appScript.roomIsActive() == true                                    // Room should still be active
 
         when:
@@ -199,13 +199,13 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+        1 * log.debug(gettingSleepyMessage)
 
         when:
         TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
 
         then:
-        1 * log.debug("trySleepRoom()")
+        1 * log.debug(goToSleepMessage)
         // Check that all switches are off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that all dimmers are off
@@ -240,13 +240,13 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+        1 * log.debug(gettingSleepyMessage)
 
         when:
         TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
 
         then:
-        1 * log.debug("trySleepRoom()")
+        1 * log.debug(goToSleepMessage)
         // Check that all switches are off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that all dimmers are off
@@ -281,7 +281,7 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        0 * log.debug("Scheduling trySleepRoom for 30 seconds from now")    // Shouldn't try to sleep
+        0 * log.debug(gettingSleepyMessage)    // Shouldn't try to sleep
         appScript.roomIsActive() == true                                    // Room should still be active
 
         when:
@@ -291,13 +291,13 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+        1 * log.debug(gettingSleepyMessage)
 
         when:
         TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
 
         then:
-        1 * log.debug("trySleepRoom()")
+        1 * log.debug(goToSleepMessage)
         // Check that all switches are off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that all dimmers are off
@@ -332,13 +332,13 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+        1 * log.debug(gettingSleepyMessage)
 
         when:
         TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
 
         then:
-        1 * log.debug("trySleepRoom()")
+        1 * log.debug(goToSleepMessage)
         // Check that all switches are off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that all dimmers are off
@@ -372,7 +372,7 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        0 * log.debug("Scheduling trySleepRoom for 30 seconds from now")    // Shouldn't try to sleep
+        0 * log.debug(gettingSleepyMessage)    // Shouldn't try to sleep
         appScript.roomIsActive() == true                                    // Room should still be active
 
         when:
@@ -382,13 +382,13 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+        1 * log.debug(gettingSleepyMessage)
 
         when:
         TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
 
         then:
-        1 * log.debug("trySleepRoom()")
+        1 * log.debug(goToSleepMessage)
         // Check that all switches are off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that all dimmers are off
@@ -423,13 +423,13 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+        1 * log.debug(gettingSleepyMessage)
 
         when:
         TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
 
         then:
-        1 * log.debug("trySleepRoom()")
+        1 * log.debug(goToSleepMessage)
         // Check that all switches are off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that all dimmers are off
@@ -464,13 +464,13 @@ class CanSleepTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        1 * log.debug("Scheduling trySleepRoom for 30 seconds from now")
+        1 * log.debug(gettingSleepyMessage)
 
         when:
         TimeKeeper.advanceSeconds(30)           // And it takes 30 seconds to shut them off, with switches last
 
         then:
-        1 * log.debug("trySleepRoom()")
+        1 * log.debug(goToSleepMessage)
         // Check that all switches are off
         switchFixtures.each { assert it.currentValue('switch') == 'off' }
         // Check that all dimmers are off

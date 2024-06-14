@@ -8,9 +8,6 @@ import me.biocomp.hubitat_ci.util.integration.TimeKeeper
 
 import spock.lang.Specification
 
-/**
-* Basic tests for lockdown.groovy
-*/
 class BasicTests extends IntegrationAppSpecification {
     def switchFixture1 = SwitchFixtureFactory.create('s1')
     def switchFixture2 = SwitchFixtureFactory.create('s2')

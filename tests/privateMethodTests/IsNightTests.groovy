@@ -9,9 +9,6 @@ import me.biocomp.hubitat_ci.util.integration.TimeKeeper
 import spock.lang.Specification
 import spock.lang.Unroll
 
-/**
-* Tests of private methods for lockdown.groovy
-*/
 class IsNightTests extends IntegrationAppSpecification {
     def switchFixture1 = SwitchFixtureFactory.create('s1')
     def switchFixture2 = SwitchFixtureFactory.create('s2')
