@@ -113,17 +113,25 @@ def initialize() {
     // ALWAYS exit early.
 
     if (settings.wakeUpForMotion || settings.motionActivityKeepsAwake) {
-	    subscribe(motionSensors, "motion.active", motionActiveHandler)
-        subscribe(motionSensors, "motion.inactive", motionInactiveHandler)
+        if (motionSensors) {
+	        subscribe(motionSensors, "motion.active", motionActiveHandler)
+            subscribe(motionSensors, "motion.inactive", motionInactiveHandler)
+        }
     }
 
     if (settings.wakeUpForSwitchActivity || settings.switchActivityKeepsAwake) {
-        subscribe(switches, "switch.on", switchActivityHandler)
-        subscribe(dimmers, "switch.on", switchActivityHandler)
+        if (switches) {
+            subscribe(switches, "switch.on", switchActivityHandler)
+        }
+        if (dimmers) {
+            subscribe(dimmers, "switch.on", switchActivityHandler)
+        }
     }
 
     if (settings.wakeUpForDimmerActivity || settings.dimmerActivityKeepsAwake) {
-        subscribe(dimmers, "level", levelActivityHandler)
+        if (dimmers) {
+            subscribe(dimmers, "level", levelActivityHandler)
+        }
     }
 
     if (!state.lastActivityTime) {
@@ -152,7 +160,7 @@ def switchActivityHandler(evt) {
 
 
 def levelActivityHandler(evt) {
-    if ((evt.value as Integer) <= dimmedLevel) {     // Dimming down to the dimmed level or below doesn't count as activity
+    if ((evt.value as Integer) <= settings.dimmedLevel) {     // Dimming down to the dimmed level or below doesn't count as activity
         return
     }
 
@@ -210,7 +218,7 @@ def tickTock(evt) {
 
     def needToTurnOffIn30Seconds = false
 
-    settings.dimmers.each { dimmer ->
+    settings.dimmers?.each { dimmer ->
         if (dimmer.currentValue("switch") == "on") {
             if (dimmer.currentValue("level") > settings.dimmedLevel) {
                 log "${dimmer.displayName} is on and level is ${dimmer.currentValue("level")}, which is above Dimmed Level (${settings.dimmedLevel}). Dimming..."
@@ -229,7 +237,7 @@ def tickTock(evt) {
         }
     }
 
-    settings.switches.each { s ->
+    settings.switches?.each { s ->
         if (s.currentValue("switch") == "on") {
             // Turn them off in 30 seconds if no activity happens before then.
             needToTurnOffIn30Seconds = true
@@ -257,12 +265,12 @@ def trySleepRoom(evt) {
     log "Putting the room to sleep."
 
     if (settings.sleepMode == "Completely off") {
-        settings.dimmers.each { dimmer ->
+        settings.dimmers?.each { dimmer ->
             dimmer.off()
         }
     }
 
-    settings.switches.each { s ->
+    settings.switches?.each { s ->
         s.off()
     }
 }
@@ -279,7 +287,7 @@ def wakeRoom() {
     atomicState["wakeRoom"] = true
 
     if (settings.wakeUpDimmers) {
-        settings.dimmers.each { dimmer ->
+        settings.dimmers?.each { dimmer ->
             if (dimmer.currentValue("switch") == "off") {
                 log "Turning on dimmer '${dimmer.displayName}' to dimmed level."
                 dimmer.setLevel(settings.dimmedLevel, 1)
@@ -288,7 +296,7 @@ def wakeRoom() {
     }
 
     if (settings.wakeUpSwitches) {
-        settings.switches.each { s ->
+        settings.switches?.each { s ->
             if (s.currentValue("switch") == "off") {
                 log "Turning on switch '${s.displayName}'."
                 s.on()
@@ -329,14 +337,14 @@ def isNight(fromTimeSetting, toTimeSetting, now) {
 def roomIsAwake(Long deviceIdToIgnore = null) {
     def result = false
 
-    settings.switches.each { s ->
+    settings.switches?.each { s ->
         if (s.currentValue("switch") == "on" && s.getIdAsLong() != deviceIdToIgnore) {
             result = true
         }
     }
 
-    settings.dimmers.each { d ->
-        if (d.currentValue("switch") == "on" && d.currentValue("level") >= dimmedLevel && d.getIdAsLong() != deviceIdToIgnore) {
+    settings.dimmers?.each { d ->
+        if (d.currentValue("switch") == "on" && d.currentValue("level") >= settings.dimmedLevel && d.getIdAsLong() != deviceIdToIgnore) {
             result = true
         }
     }
@@ -354,7 +362,7 @@ def roomIsActive() {
     use (groovy.time.TimeCategory) {
         if (settings.motionActivityKeepsAwake) {
             // Return true if any motion sensor is active
-            settings.motionSensors.each { motionSensor ->
+            settings.motionSensors?.each { motionSensor ->
                 if (motionSensor.currentValue("motion") == "active") {
                     result = true
                 }
