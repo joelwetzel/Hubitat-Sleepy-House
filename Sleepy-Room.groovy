@@ -113,24 +113,24 @@ def initialize() {
     // ALWAYS exit early.
 
     if (settings.wakeUpForMotion || settings.motionActivityKeepsAwake) {
-        if (motionSensors) {
-	        subscribe(motionSensors, "motion.active", motionActiveHandler)
-            subscribe(motionSensors, "motion.inactive", motionInactiveHandler)
+        if (settings.motionSensors) {
+	        subscribe(settings.motionSensors, "motion.active", motionActiveHandler)
+            subscribe(settings.motionSensors, "motion.inactive", motionInactiveHandler)
         }
     }
 
     if (settings.wakeUpForSwitchActivity || settings.switchActivityKeepsAwake) {
-        if (switches) {
-            subscribe(switches, "switch.on", switchActivityHandler)
+        if (settings.switches) {
+            subscribe(settings.switches, "switch.on", switchActivityHandler)
         }
-        if (dimmers) {
-            subscribe(dimmers, "switch.on", switchActivityHandler)
+        if (settings.dimmers) {
+            subscribe(settings.dimmers, "switch.on", switchActivityHandler)
         }
     }
 
     if (settings.wakeUpForDimmerActivity || settings.dimmerActivityKeepsAwake) {
-        if (dimmers) {
-            subscribe(dimmers, "level", levelActivityHandler)
+        if (settings.dimmers) {
+            subscribe(settings.dimmers, "level", levelActivityHandler)
         }
     }
 
@@ -374,9 +374,9 @@ def roomIsActive() {
         def minutesSinceLastActivity = calculateMinutesSinceLastActivity()
 
         // log "Minutes since last activity: ${minutesSinceLastActivity}"
-        // log "activityWaitMinutes: ${activityWaitMinutes}"
+        // log "activityWaitMinutes: ${settings.activityWaitMinutes}"
 
-        if (minutesSinceLastActivity < activityWaitMinutes) {
+        if (minutesSinceLastActivity < settings.activityWaitMinutes) {
             result = true
         }
     }
@@ -393,7 +393,7 @@ def getFormat(type, myText="") {
 
 
 def log(msg) {
-	if (enableLogging) {
+	if (settings.enableLogging) {
 		log.debug msg
 	}
 }
