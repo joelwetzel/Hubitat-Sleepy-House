@@ -114,7 +114,7 @@ def initialize() {
 
     if (settings.wakeUpForMotion || settings.motionActivityKeepsAwake) {
         if (settings.motionSensors) {
-	        subscribe(settings.motionSensors, "motion.active", motionActiveHandler)
+            subscribe(settings.motionSensors, "motion.active", motionActiveHandler)
             subscribe(settings.motionSensors, "motion.inactive", motionInactiveHandler)
         }
     }
@@ -393,9 +393,9 @@ def getFormat(type, myText="") {
 
 
 def log(msg) {
-	if (settings.enableLogging) {
-		log.debug msg
-	}
+    if (settings.enableLogging) {
+        log.debug msg
+    }
 }
 
 def calculateMinutesSinceLastActivity() {
