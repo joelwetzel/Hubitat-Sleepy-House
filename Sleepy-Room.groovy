@@ -107,6 +107,9 @@ def initialize() {
 
 	unschedule()
 	unsubscribe()
+	
+	// Reset sleep scheduled flag
+	state.sleepScheduled = false
 
     // NOTE: The event handlers also check these settings, but I double-check them
     // here to keep the app lightweight, and not register for a handler that will
@@ -195,10 +198,6 @@ def motionActiveHandler(evt) {
 
 def motionInactiveHandler(evt) {
     log "Motion ended on '${evt.displayName}'"
-
-    if (settings.motionActivityKeepsAwake) {
-        updateLastActivityTime()
-    }
 }
 
 def updateLastActivityTime() {
@@ -213,6 +212,11 @@ def tickTock(evt) {
     }
 
     if (roomIsActive()) {
+        // Cancel any pending sleep if room becomes active again
+        if (state.sleepScheduled) {
+            unschedule(trySleepRoom)
+            state.sleepScheduled = false
+        }
         return
     }
 
@@ -244,8 +248,9 @@ def tickTock(evt) {
         }
     }
 
-    if (needToTurnOffIn30Seconds) {
+    if (needToTurnOffIn30Seconds && !state.sleepScheduled) {
         log "Room is falling asleep.  Scheduling full sleep for 30 seconds from now."
+        state.sleepScheduled = true
         runIn(30, trySleepRoom)
     }
 }
@@ -253,6 +258,8 @@ def tickTock(evt) {
 
 // Try to make the room go to sleep, as long as there's no ongoing activity.
 def trySleepRoom(evt) {
+    state.sleepScheduled = false
+    
     if (!isCurrentlyNight()) {
         return
     }
@@ -283,6 +290,12 @@ def wakeRoom() {
     }
 
     log "Waking room."
+    
+    // Cancel any pending sleep when waking
+    if (state.sleepScheduled) {
+        unschedule(trySleepRoom)
+        state.sleepScheduled = false
+    }
 
     atomicState["wakeRoom"] = true
 
