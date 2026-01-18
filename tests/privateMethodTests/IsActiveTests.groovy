@@ -201,7 +201,7 @@ class IsActiveTests extends IntegrationAppSpecification {
         appScript.roomIsActive() == true
     }
 
-    def "when motion ends, the room stays active for 5 minutes only"() {
+    def "when motion ends, the room stays active for 5 minutes from activation"() {
         when:
         motionSensorFixture2.activate()
 
@@ -234,18 +234,39 @@ class IsActiveTests extends IntegrationAppSpecification {
         TimeKeeper.advanceMinutes(1)
 
         then:
-        appScript.roomIsActive() == true
-
-        when:
-        TimeKeeper.advanceMinutes(1)
-
-        then:
-        appScript.roomIsActive() == true
-
-        when:
-        TimeKeeper.advanceMinutes(1)
-
-        then:
         appScript.roomIsActive() == false
+    }
+
+    def "motion sensor staying active continuously keeps room awake"() {
+        when:
+        motionSensorFixture2.activate()
+
+        then:
+        1 * log.debug('Motion detected on \'m2\'')
+        appScript.roomIsActive() == true
+
+        when:
+        TimeKeeper.advanceMinutes(6)
+
+        then:
+        appScript.roomIsActive() == true  // Still active because motion sensor is still active
+
+        when:
+        TimeKeeper.advanceMinutes(10)
+
+        then:
+        appScript.roomIsActive() == true  // Still active after 16 minutes because motion sensor is still active
+
+        when:
+        motionSensorFixture2.inactivate()
+
+        then:
+        appScript.roomIsActive() == true  // Still active immediately after inactivation
+
+        when:
+        TimeKeeper.advanceMinutes(5)
+
+        then:
+        appScript.roomIsActive() == false  // Now inactive 5 minutes after last activation
     }
 }
