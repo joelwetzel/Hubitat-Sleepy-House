@@ -27,7 +27,7 @@ jobs:
     
     - name: Build and Test
       env:
-        GITHUB_REPOSITORY: biocomp/hubitat_ci
+        GITHUB_REPOSITORY: joelwetzel/hubitat_ci
         GITHUB_ACTOR: ${{ github.actor }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         MAVEN_ARTIFACT_ID: hubitat_ci
