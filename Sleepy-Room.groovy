@@ -195,10 +195,6 @@ def motionActiveHandler(evt) {
 
 def motionInactiveHandler(evt) {
     log "Motion ended on '${evt.displayName}'"
-
-    if (settings.motionActivityKeepsAwake) {
-        updateLastActivityTime()
-    }
 }
 
 def updateLastActivityTime() {
