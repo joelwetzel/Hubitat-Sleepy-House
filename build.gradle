@@ -16,10 +16,10 @@ repositories {
 
     // hubitat_ci repository
     maven {
-        url uri("https://maven.pkg.github.com/${System.getenv("MAVEN_REPOSITORY") ?: "biocomp/hubitat_ci"}")
+        url uri("https://maven.pkg.github.com/${System.getenv("MAVEN_GITHUB_REPOSITORY") ?: "biocomp/hubitat_ci"}")
         credentials {
-            username System.getenv("MAVEN_ACTOR")
-            password System.getenv("MAVEN_TOKEN")
+            username System.getenv("MAVEN_GITHUB_ACTOR")
+            password System.getenv("MAVEN_GITHUB_TOKEN")
         }
     }
 }
